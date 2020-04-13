@@ -1,0 +1,22 @@
+{
+  "name": "mc-server-query",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "Robert Quitt",
+  "license": "0BSD",
+  "dependencies": {
+    "bad-words": "^3.0.3",
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "minecraft-query": "^1.0.9",
+    "node-fetch": "^2.6.0",
+    "tail": "^2.0.3"
+  },
+  "devDependencies": {},
+  "description": ""
+}

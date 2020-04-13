@@ -1,0 +1,18 @@
+Minecraft Query Server/Discord Bot
+
+This is a little bot that I run on my minecraft server, to copy chat messages
+to discord, and have a little widget on my website that informs users of the
+current status of the server.
+
+Runs via node.js
+
+Install: $ npm install
+
+Configure: $ vim .env
+* WEBHOOKURL=https://discordapp.com/api/webhooks/...
+* TOKEN=...
+* LOGFILE=.../logs/latest.log
+
+Run: $ node server.js
+
+Tested with Spigot Minecraft Server 1.15.2 and Node.js v10.10.0 and npm v6.4.1
