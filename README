@@ -10,7 +10,6 @@ Install: $ npm install
 
 Configure: $ vim .env
 * WEBHOOKURL=https://discordapp.com/api/webhooks/...
-* TOKEN=...
 * LOGFILE=.../logs/latest.log
 
 Run: $ node server.js

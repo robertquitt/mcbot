@@ -5,15 +5,16 @@ const filter = new Filter();
 require("dotenv").config();
 
 const webhookUrl = process.env.WEBHOOKURL || exit(1);
-const token = process.env.TOKEN || exit(1);
 const logFile = process.env.LOGFILE || exit(1);
 
 const chatRegex = /^\[.+\] \[.+\]: \<(\w+)\> (.+)$/;
+const serverChatRegex = /^\[.+\] \[.+\]: \[Server\] (.+)$/;
 const loginRegex = /^\[.+\] \[.+\]: (\w+)\[.+\] logged in/;
 const logoutRegex = /^\[.+\] \[.+\]: (\w+) left/;
 const advancementRegex = /^\[.+\] \[.+\]: (\w+) has made the advancement \[(.+)\]/;
 
 tail = new Tail(logFile);
+console.log(`Watching for changes to ${logFile}`)
 
 const processLine = line => {
   const res = line.match(chatRegex);
@@ -27,6 +28,12 @@ const processLine = line => {
     } else {
       sendMessage(`<${user}> ${message}`);
     }
+    return;
+  }
+  const serverMsg = line.match(serverChatRegex);
+  if (serverMsg) {
+    let message = serverMsg[1].replace(/.\[m$/, "");
+    sendMessage(`[Server] ${message}`);
     return;
   }
   const login = line.match(loginRegex);
