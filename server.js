@@ -47,4 +47,6 @@ app.listen(port, () => {
   console.log(`Express listening on ${port}`);
 });
 
+bot.init();
+
 // vim: et sw=2

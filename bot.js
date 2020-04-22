@@ -13,10 +13,16 @@ const loginRegex = /^\[.+\] \[.+\]: (\w+)\[.+\] logged in/;
 const logoutRegex = /^\[.+\] \[.+\]: (\w+) left/;
 const advancementRegex = /^\[.+\] \[.+\]: (\w+) has made the advancement \[(.+)\]/;
 
-tail = new Tail(logFile);
-console.log(`Watching for changes to ${logFile}`)
+const init = () => {
+  let tail = new Tail(logFile);
+  console.log(`Watching for changes to ${logFile}`)
 
-const processLine = line => {
+  tail.on("line", line => {
+    processLine(line, sendMessage);
+  });
+}
+
+const processLine = (line, sendMessage) => {
   const res = line.match(chatRegex);
   if (res) {
     let user = res[1];
@@ -57,10 +63,6 @@ const processLine = line => {
   }
 };
 
-tail.on("line", line => {
-  processLine(line);
-});
-
 const sendMessage = message => {
   fetch(webhookUrl, {
     method: "POST",
@@ -70,5 +72,8 @@ const sendMessage = message => {
     body: JSON.stringify({ content: `${message}` })
   });
 };
+
+exports.init = init;
+exports.processLine = processLine;
 
 // vim: et sw=2
