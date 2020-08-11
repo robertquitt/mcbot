@@ -15,12 +15,12 @@ const advancementRegex = /^\[.+\] \[.+\]: (\w+) has made the advancement \[(.+)\
 
 const init = () => {
   let tail = new Tail(logFile);
-  console.log(`Watching for changes to ${logFile}`)
+  console.log(`Watching for changes to ${logFile}`);
 
   tail.on("line", line => {
     processLine(line, sendMessage);
   });
-}
+};
 
 const processLine = (line, sendMessage) => {
   const res = line.match(chatRegex);

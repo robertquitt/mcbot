@@ -2,6 +2,7 @@ const port = 8000;
 const fs = require("fs");
 const app = require("express")();
 const minecraftQuery = require("minecraft-query");
+const fetch = require("node-fetch");
 
 const bot = require("./bot.js");
 
@@ -23,6 +24,33 @@ app.get("(/query)?/", (req, res) => {
       res.end();
     });
 });
+
+const nameApi = async uuid => {
+  const path = `/home/robert/ridgev3/cache/${uuid}.json`;
+  if (fs.existsSync(path)) {
+    const resp = fs.readFileSync(path);
+    return JSON.parse(resp);
+  } else {
+    const uuidStripped = uuid.replace(/-/g, "");
+    const resp = await fetch(
+      `https://api.mojang.com/user/profiles/${uuidStripped}/names`
+    );
+    const usernames = await resp.json();
+    fs.writeFileSync(path, JSON.stringify(usernames));
+    return usernames;
+  }
+};
+
+const uuidToUsername = async uuid => {
+  const usernames = await nameApi(uuid);
+  return usernames.slice(-1)[0].name;
+};
+
+const uuidList = () => {
+  const files = fs.readdirSync("/home/robert/ridgev3/world/stats");
+  const uuids = files.map(filename => filename.substring(0, 36));
+  return uuids;
+};
 
 const getUsercache = () => {
   const usercacheJson = fs.readFileSync("/home/robert/ridgev3/usercache.json");
@@ -58,9 +86,9 @@ app.get("/user/:username/", (req, res) => {
 });
 
 const getDiamonds = () => {
-  const usercache = getUsercache();
-  const diamonds = usercache.map(user => {
-    const stats = getStats(user.uuid) || { stats: {} };
+  const uuids = uuidList();
+  const diamonds = uuids.map(uuid => {
+    const stats = getStats(uuid) || { stats: {} };
     const minedStats = stats.stats["minecraft:mined"] || {};
     const usedStats = stats.stats["minecraft:used"] || {};
     const diamondsMined = minedStats["minecraft:diamond_ore"] || 0;
@@ -92,6 +120,20 @@ const getVillagerTrades = () => {
   return trades;
 };
 
+const getTimePlayed = async () => {
+  const uuids = uuidList();
+  const times = await Promise.all(
+    uuids.map(async uuid => {
+      const stats = getStats(uuid) || { stats: {} };
+      const customStats = stats.stats["minecraft:custom"] || {};
+      const timeTicks = customStats["minecraft:play_one_minute"] || 0;
+      const name = await uuidToUsername(uuid);
+      return [name, timeTicks];
+    })
+  );
+  return times;
+};
+
 app.get("/diamonds/", (req, res) => {
   let diamonds = getDiamonds();
   diamonds.sort((a, b) => {
@@ -121,6 +163,53 @@ app.get("/villagertrades/", (req, res) => {
   });
   trades.forEach(e => {
     res.write(`${e[1]}\t${e[0]}\n`);
+  });
+  res.end();
+});
+
+app.get("/timeplayed/", async (req, res) => {
+  let times = await getTimePlayed();
+  const ticksPerHour = 20 * 60 * 60;
+  const ticksPerMinute = 20 * 60;
+  const ticksPerSecond = 20;
+  times.sort((a, b) => {
+    return b[1] - a[1];
+  });
+  times.forEach(e => {
+    const hours = Math.floor(e[1] / ticksPerHour)
+      .toString()
+      .padStart(5, " ");
+    const minutes = (Math.floor(e[1] / ticksPerMinute) % 60)
+      .toString()
+      .padStart(2, "0");
+    const seconds = (Math.floor(e[1] / ticksPerSecond) % 60)
+      .toString()
+      .padStart(2, "0");
+    res.write(`${hours}:${minutes}:${seconds}\t${e[0]}\n`);
+  });
+  res.end();
+});
+
+app.get("/gulag/", (req, res) => {
+  const timePlayed = getTimePlayed();
+  const diamonds = getDiamonds();
+  const ticksPerHour = 20 * 60 * 60;
+  const gulag = diamonds.map((e, i) => {
+    const time = timePlayed[i][1] / ticksPerHour;
+    const percent = time == 0 ? 0 : e[1] / time;
+    return [e[0], percent, time, e[1]];
+  });
+  gulag.sort((a, b) => {
+    if (a[1] == b[1]) {
+      return b[2] - a[2];
+    }
+    return b[1] - a[1];
+  });
+  gulag.forEach(e => {
+    const diamondsPerHour = e[1].toFixed(2);
+    const hours = e[2].toFixed(2);
+    const diamonds = e[3];
+    res.write(`${diamondsPerHour}\t${diamonds}\t${hours}\t${e[0]}\n`);
   });
   res.end();
 });
